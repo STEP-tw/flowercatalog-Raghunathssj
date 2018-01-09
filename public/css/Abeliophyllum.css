@@ -1,0 +1,23 @@
+.Abeliophyllum{
+  margin-left: 5%;
+  float: left;
+}
+
+p {
+  display: block;
+  margin-right: 10%;
+}
+
+.text {
+  margin-top: 30%;
+}
+
+hr {
+  margin-left: 5%;
+  margin-right: 5%;
+}
+
+.heading{
+  text-align: center;
+  color: orange;
+}

@@ -1,0 +1,14 @@
+.main {
+  float: left;
+}
+
+.links {
+  margin-top: 17%;
+  float: right;
+  display: inline-block;
+}
+
+h2{
+  margin-left: 60%;
+  color: orange;
+}
