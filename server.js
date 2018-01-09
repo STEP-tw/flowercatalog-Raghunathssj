@@ -1,19 +1,52 @@
 const fs = require('fs');
+const timeStamp = require('./public/js/time.js').timeStamp;
 const http = require('http');
-const PORT = 8080;
+const WebApp = require('./public/js/webapp');
+let registered_users = [{userName:'raghu',name:'Raghunath'}];
+let toS = o=>JSON.stringify(o,null,2);
 
-const getContentType = function(extention) {
-  let contentTypes = {
-    'undefined': 'text/html',
-    'html':'text/html',
-    'jpg':'base64',
-    'gif':'base64',
-    'css':'text/css',
-    'js':'text/javascript',
-    'ico':'base64',
-    'pdf':'application/pdf'
+let logRequest = (req,res)=>{
+  let text = ['------------------------------',
+    `${timeStamp()}`,
+    `${req.method} ${req.url}`,
+    `HEADERS=> ${toS(req.headers)}`,
+    `COOKIES=> ${toS(req.cookies)}`,
+    `BODY=> ${toS(req.body)}`,''].join('\n');
+  fs.appendFile('request.log',text,()=>{});
+
+  console.log(`${req.method} ${req.url}`);
+};
+let loadUser = (req,res)=>{
+  let sessionid = req.cookies.sessionid;
+  let user = registered_users.find(u=>u.sessionid==sessionid);
+  if(sessionid && user){
+    req.user = user;
   }
-  return contentTypes[extention];
+};
+
+
+const respond = function(res,contentType,content,statusCode){
+  res.setHeader('content-Type',contentType);
+  res.statusCode = statusCode;
+  res.write(content);
+  res.end();
+  return;
+};
+
+const respondForFileNotFound = function(res,url){
+  respond(res,'text/plain',`${url} Not Found`,404);
+  return;
+};
+
+const respondWithStatus = function(req,res,contentType) {
+  let path = getPath(req.url);
+  fs.readFile(path,(err,data)=>{
+    if (err)
+      respondForFileNotFound(res,req.url)
+    else
+      respond(res,contentType,data,200);
+  });
+  return;
 };
 
 const getPath = function(url) {
@@ -25,87 +58,95 @@ const getPath = function(url) {
   }
   return path;
 };
-
-const respondForFileNotFound = function(res,url){
-  respond(res,'text/plain',`${url} Not Found`,404);
-  return;
-}
-
-const respondWithStatus = function(res,req,contentType) {
-  let path = getPath(req.url);
-  fs.readFile(path,(err,data)=>{
-    if (err)
-      respondForFileNotFound(res,req.url)
-    else
-      respond(res,contentType,data,200);
-  });
-  return;
+let redirectLoggedOutUserToLogin = (req,res)=>{
+  if(req.urlIsOneOf(['/html/guestBook.html']) && !req.user) res.redirect('/html/login.html');
 };
 
-const respond = function(res,contentType,content,statusCode){
-  res.setHeader('content-Type',contentType);
-  res.statusCode = statusCode;
-  res.write(content);
-  res.end();
-  return;
-};
+let app = WebApp.create();
+app.use(logRequest);
+app.use(loadUser);
+app.use(redirectLoggedOutUserToLogin);
 
-const decodeData = function(data,index){
-  let seperatedData = data[index].split('=')[1];
-  let decodeData = seperatedData.replace(/[+]/g,' ');
-  return decodeURIComponent(decodeData);
-}
-
-const getGivenData = function(data){
-  info = data.split('&');
-  let name = decodeData(info,0);
-let comment = decodeData(info,1);
-  return {name:name,comment:comment};
-}
-
-const requestHandler = function(req,res) {
-  console.log(`method : ${req.method} \nurl : ${req.url}`);
-  let contentType = getContentType(req.url.split('.')[1]);
-  if(req.url == '/addComment'){
-    handleData(req,res,contentType);
-    res.statusCode = 302;
-    res.setHeader('location','/html/guestBook.html');
-    res.end();
+app.get('/',(req,res)=>{
+  respondWithStatus(req,res,'text/html');
+});
+app.get('/css/Abeliophyllum.css',(req,res)=>{
+  respondWithStatus(req,res,'text/css');
+});
+app.get('/css/Ageratum.css',(req,res)=>{
+  respondWithStatus(req,res,'text/css');
+});
+app.get('/css/guestBook.css',(req,res)=>{
+  respondWithStatus(req,res,'text/css');
+});
+app.get('/css/style.css',(req,res)=>{
+  respondWithStatus(req,res,'text/css');
+});
+app.get('/docs/Abeliophyllum.pdf',(req,res)=>{
+  respondWithStatus(req,res,'application/pdf');
+});
+app.get('/docs/Ageratum.pdf',(req,res)=>{
+  respondWithStatus(req,res,'application/pdf');
+});
+app.get('/html/index.html',(req,res)=>{
+  respondWithStatus(req,res,'text/html');
+});
+app.get('/html/guestBook.html',(req,res)=>{
+  respondWithStatus(req,res,'text/html');
+});
+app.get('/html/Abeliophyllum.html',(req,res)=>{
+  respondWithStatus(req,res,'text/html');
+});
+app.get('/html/Ageratum.html',(req,res)=>{
+  respondWithStatus(req,res,'text/html');
+});
+app.get('/html/login.html',(req,res)=>{
+  respondWithStatus(req,res,'text/html');
+})
+app.get('/images/animated-flower-image-0021.gif',(req,res)=>{
+  respondWithStatus(req,res,'base64');
+});
+app.get('/images/favicon.ico',(req,res)=>{
+  respondWithStatus(req,res,'base64');
+});
+app.get('/images/freshorigins.jpg',(req,res)=>{
+  respondWithStatus(req,res,'base64');
+});
+app.get('/images/pbase-Abeliophyllum.jpg',(req,res)=>{
+  respondWithStatus(req,res,'base64');
+});
+app.get('/images/pbase-agerantum.jpg',(req,res)=>{
+  respondWithStatus(req,res,'base64');
+});
+app.get('/js/comments.js',(req,res)=>{
+  respondWithStatus(req,res,'text/javascript');
+});
+app.get('/js/flashImage.js',(req,res)=>{
+  respondWithStatus(req,res,'text/javascript');
+});
+app.get('/js/guestBook.js',(req,res)=>{
+  respondWithStatus(req,res,'text/javascript');
+});
+app.post('/checkUser',(req,res)=>{
+  let user = registered_users.find(u=>u.userName==req.body.userName);
+  if(!user) {
+    res.setHeader('Set-Cookie',`logInFailed=true`);
+    res.redirect('/html/guestBook.html');
     return;
   }
-  respondWithStatus(res,req,contentType);
-};
+  let sessionid = new Date().getTime();
+  res.setHeader('Set-Cookie',`sessionid=${sessionid}`);
+  user.sessionid = sessionid;
+  res.redirect('/html/guestBook.html');
+})
+app.get("/js/comment.js",(req,res)=>{
+  respondWithStatus(req,res,'text/javascript');
+});
+app.post('/js/addComment.js',(req,res)=>{
+  res.redirect('/html/guestBook.html');
+});
 
-const storeData = function(data,date,res) {
-  let name = data.name;
-  let comment = data.comment;
-  fs.readFile('./comments.json',(err,data)=>{
-    let content = JSON.parse(data);
-    content.unshift({
-      "date":date,
-      "name":name,
-      "comment":comment
-    });
-    content = JSON.stringify(content,null,2);
-    fs.writeFile('./comments.json',content,()=>{});
-    fs.writeFile('.publi/js/comments.js',`var comments = ${content}`,(err)=>{console.log(err)});
-  });
-  return;
-}
-
-const handleData = function(req,res) {
-  req.on('data',(info)=>{
-    let data = info.toString();
-    let content = getGivenData(data);
-    let date = new Date();
-    date = date.toLocaleString();
-    storeData(content,date,res);
-    return;
-  });
-  return;
-};
-
-const server = http.createServer(requestHandler);
-
-server.listen(PORT);
-console.log(`listening at ${PORT}`);
+const PORT = 8000;
+let server = http.createServer(app);
+server.on('error',e=>console.error('**error**',e.message));
+server.listen(PORT,(e)=>console.log(`server listening at ${PORT}`));
