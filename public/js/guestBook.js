@@ -1,8 +1,9 @@
 const showComments = function(){
-  comments.forEach(something);
+  comments.forEach(toHTML);
+  return;
 }
 
-const something = function(comment) {
+const toHTML = function(comment) {
   let keys = Object.keys(comment);
   let content = keys.map((ele)=>{
     return `${ele} : ${comment[ele]} <br>`;
@@ -10,12 +11,14 @@ const something = function(comment) {
   content = content.join('\n');
   content += '<hr>';
   displayData(content);
+  return;
 };
 
 const displayData = function(data) {
   let divElement = document.createElement('div');
   divElement.innerHTML = data;
   document.getElementById('comments').appendChild(divElement);
+  return;
 }
 
 window.onload = showComments;

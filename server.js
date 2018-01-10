@@ -1,6 +1,7 @@
 const fs = require('fs');
 const timeStamp = require('./public/js/time.js').timeStamp;
 const http = require('http');
+const handleData = require('./public/js/addComment.js').handleData;
 const WebApp = require('./public/js/webapp');
 let registered_users = [{userName:'raghu',name:'Raghunath'}];
 let toS = o=>JSON.stringify(o,null,2);
@@ -24,31 +25,6 @@ let loadUser = (req,res)=>{
   }
 };
 
-
-const respond = function(res,contentType,content,statusCode){
-  res.setHeader('content-Type',contentType);
-  res.statusCode = statusCode;
-  res.write(content);
-  res.end();
-  return;
-};
-
-const respondForFileNotFound = function(res,url){
-  respond(res,'text/plain',`${url} Not Found`,404);
-  return;
-};
-
-const respondWithStatus = function(req,res,contentType) {
-  let path = getPath(req.url);
-  fs.readFile(path,(err,data)=>{
-    if (err)
-      respondForFileNotFound(res,req.url)
-    else
-      respond(res,contentType,data,200);
-  });
-  return;
-};
-
 const getPath = function(url) {
   let path;
   if(url == '/') {
@@ -58,6 +34,20 @@ const getPath = function(url) {
   }
   return path;
 };
+
+const respondWithStatus = function(req,res,contentType) {
+  let path = getPath(req.url);
+  debugger;
+  console.log(contentType,'---', path);
+  fs.readFile(path,(err,data)=>{
+    res.setHeader('content-Type',contentType);
+    res.statusCode = 200;
+    res.write(data);
+    res.end();
+  });
+  return;
+};
+
 let redirectLoggedOutUserToLogin = (req,res)=>{
   if(req.urlIsOneOf(['/html/guestBook.html']) && !req.user) res.redirect('/html/login.html');
 };
@@ -130,7 +120,6 @@ app.get('/js/guestBook.js',(req,res)=>{
 app.post('/checkUser',(req,res)=>{
   let user = registered_users.find(u=>u.userName==req.body.userName);
   if(!user) {
-    res.setHeader('Set-Cookie',`logInFailed=true`);
     res.redirect('/html/guestBook.html');
     return;
   }
@@ -138,11 +127,12 @@ app.post('/checkUser',(req,res)=>{
   res.setHeader('Set-Cookie',`sessionid=${sessionid}`);
   user.sessionid = sessionid;
   res.redirect('/html/guestBook.html');
-})
+});
 app.get("/js/comment.js",(req,res)=>{
   respondWithStatus(req,res,'text/javascript');
 });
 app.post('/js/addComment.js',(req,res)=>{
+  handleData(req,res);
   res.redirect('/html/guestBook.html');
 });
 

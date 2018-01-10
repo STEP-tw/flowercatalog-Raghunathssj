@@ -58,6 +58,7 @@ const main = function(req,res){
     content="";
     this._preprocess.forEach(middleware=>{
       if(res.finished) return;
+      debugger;
       middleware(req,res);
     });
     if(res.finished) return;
